@@ -1,0 +1,38 @@
+name: Build Frontend and Backend
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22'
+
+    - name: Install frontend dependencies and build
+      run: |
+        cd web
+        npm install
+        npm run build
+      env:
+        CI: true
+
+    - name: Set up .NET Core SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore backend dependencies
+      run: dotnet restore KoalaWiki.sln
+
+    - name: Build backend
+      run: dotnet build KoalaWiki.sln --no-restore
