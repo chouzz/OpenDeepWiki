@@ -129,7 +129,27 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
                 updatedAt: new Date(),
             }
 
-            messages.push(userMessage);
+            // Prepare messages for the API call before adding the local placeholder aiMessage
+            const messagesForApi = [
+                ...messages.map(m => ({
+                    role: m.role as "user" | "assistant" | "system",
+                    content: m.content,
+                })),
+                {
+                    role: userMessage.role as "user" | "assistant" | "system",
+                    content: userMessage.content,
+                }
+            ];
+
+            const requestData = {
+                messages: messagesForApi,
+                organizationName: organizationName,
+                name: name,
+                deepResearch: deepResearch,
+                appId: appId,
+            };
+
+            const currentMessagesForUi = [...messages, userMessage];
             const aiMessage: MessageItem = {
                 id: uuidv4(),
                 content: [
@@ -141,11 +161,9 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
                 role: "assistant",
                 createdAt: new Date(Date.now() + 1000),  // 时间+1秒
                 updatedAt: new Date(Date.now() + 1000),  // 时间+1秒
-            }
-
-            messages.push(aiMessage);
-
-            setMessages([...messages]);
+            };
+            currentMessagesForUi.push(aiMessage);
+            setMessages(currentMessagesForUi);
 
             // 保存用户消息到IndexedDB
             if (conversationId) {
@@ -169,20 +187,6 @@ export default function Workspace({ organizationName, name, appId }: WorkspacePr
                 } catch (error) {
                     console.error('保存用户消息失败:', error);
                 }
-            }
-
-            const requestData = {
-                messages: messages.map(x => {
-                    return {
-                        role: x.role as "user" | "assistant" | "system",
-                        content: x.content,
-                    }
-                }),
-                organizationName: organizationName,
-                name: name,
-                deepResearch: deepResearch,
-                appId: appId,
-                abortController: abortControllerRef.current,
             }
 
             let currentToolCalls: any[] = [];
